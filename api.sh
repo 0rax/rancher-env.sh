@@ -113,9 +113,9 @@ index () {
         || internal_error curl_error
     stacks=$(curl -sSL ${RANCHER_API}/stacks | wc -l) \
         || internal_error curl_error
-    srv=$(curl -sSL ${RANCHER_API}/containers | wc -l) \
+    ctn=$(curl -sSL ${RANCHER_API}/containers | wc -l) \
         || internal_error curl_error
-    ctn=$(curl -sSL ${RANCHER_API}/services | wc -l) \
+    srv=$(curl -sSL ${RANCHER_API}/services | wc -l) \
         || internal_error curl_error
 
     printf "${tmpl}\n" ${host} ${stacks} ${srv} ${ctn} | reply
