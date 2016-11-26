@@ -1,7 +1,8 @@
 #!/bin/sh
 set -eo pipefail
 
-TIME=$(date +"%s%N")
+DATE="$(type -p gdate || type -p date) +%s%N"
+TIME=$(${DATE})
 
 ##
 ## CONFIG
@@ -22,6 +23,7 @@ error_text () {
         400) echo "Bad Request";;
         404) echo "Not Found";;
         405) echo "Method Not Allowed";;
+        418) echo "I'am a teapot";;
         500) echo "Internal Server Error";;
         *) echo "";;
     esac
@@ -53,7 +55,7 @@ reply () {
     send # Read reply body
 
     ### Logging
-    duration=$(printf "(%s-%s)/1000000\n" $(date +"%s%N") "${TIME}" | bc)
+    duration=$(printf "(%s-%s)/1000000\n" $(${DATE}) "${TIME}" | bc)
     log "= $(date +"%d/%m/%y %H:%M:%S") - ${method} ${uri} - ${statusc} $(error_text ${statusc}) - Took ${duration} ms"
 
     exit 0
@@ -99,7 +101,6 @@ internal_error () {
 ##
 
 index () {
-
     CONTENT_TYPE="text/json"
     local tmpl='{
     "hosts": %d,
@@ -107,7 +108,6 @@ index () {
     "services": %d,
     "containers": %d
 }'
-
 
     host=$(curl -sSL ${RANCHER_API}/hosts | wc -l) \
         || internal_error curl_error
@@ -119,6 +119,29 @@ index () {
         || internal_error curl_error
 
     printf "${tmpl}\n" ${host} ${stacks} ${srv} ${ctn} | reply
+}
+
+teapot () {
+    HTTP_RETURN=418
+    CONTENT_TYPE="text/plain"
+
+    printf "
+                        (
+             _           ) )
+          _,(_)._        ((
+     ___,(_______).        )
+   ,'__.   /       \\    /\\_
+  /,' /  |\"\"|       \\  /  /
+ | | |   |__|       |,'  /
+  \\\`.|                  /
+   \`. :           :    /
+     \`.            :.,'
+       \`-.________,-'
+
+       I AM A TEAPOT !
+
+" | reply
+
 }
 
 status () {
@@ -158,6 +181,7 @@ main () {
         # /stacks)     index;;
         # /services)   index;;
         # /containers) index;;
+        /teapot)     teapot;;
         /status)     status;;
         *)           http_error 404;;
     esac
